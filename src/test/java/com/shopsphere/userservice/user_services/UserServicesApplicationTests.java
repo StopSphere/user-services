@@ -1,4 +1,4 @@
-package com.stopsphere.userservice.user_services;
+package com.shopsphere.userservice.user_services;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
