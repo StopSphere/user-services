@@ -18,7 +18,6 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers(){
         List<UserResponse> users = userService.getAllUsers();
@@ -43,9 +42,9 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping
-    public ResponseEntity<UserResponse> updateUser(@RequestBody UpdateUserRequestDTO request){
-        UserResponse response=userService.updateUser(request.getId(),request);
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> updateUser(@RequestBody UpdateUserRequestDTO request , @PathVariable UUID id){
+        UserResponse response=userService.updateUser(id,request);
         return ResponseEntity.ok(response);
     }
 
