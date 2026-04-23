@@ -1,115 +1,161 @@
 # User Service – ShopSphere
 
-##  Overview
+## Overview
 
-User Service is a core microservice in the ShopSphere e-commerce system.
-It is responsible for managing user data and provides basic operations for users.
+This is the User Service for the ShopSphere e-commerce project.
+
+It handles everything related to users — creating users, updating them, and now also authentication using JWT.
+
+Initially this was just a basic CRUD service, but later I extended it with proper security (JWT + RBAC).
 
 ---
 
-##  Tech Stack
+## Tech Stack
 
 * Java 21
 * Spring Boot
 * Spring Data JPA
+* Spring Security
+* JWT
 * MapStruct
 * Lombok
-* MySQL (Dockerized)
+* MySQL (Docker)
 * Gradle
 
 ---
 
-##  Features
+## Features
 
-* Create User
-* Get User by ID
-* Get All Users
-* Update User
-* DTO-based request/response handling
+### User APIs
+
+* Create user
+* Get user by ID
+* Get all users
+* Update user
+
+### Authentication
+
+* Login API (JWT token generation)
+* Password hashing using BCrypt
+* Stateless authentication
+
+### Authorization
+
+* Role-based access (ADMIN / CUSTOMER)
+* Secured endpoints using Spring Security
+* Admin-only operations supported
+
+### Other
+
+* DTO-based design
+* MapStruct for mapping
 * Global exception handling
+* Validation added
 
 ---
 
-##  Architecture
+## Architecture
 
-Follows layered architecture:
+Simple layered structure:
 
 ```text
-Controller → Service → Repository → Database
+Controller → Service → Repository → DB
+```
+
+Security flow:
+
+```text
+Request → JWT Filter → SecurityContext → Controller
 ```
 
 ---
 
-##  Configuration
+## Configuration
 
-Application configuration is located in:
+Config file:
 
 ```
 src/main/resources/application.yml
 ```
 
-### Default Database Config
+### Database
 
 * URL: `jdbc:mysql://localhost:3307/user_db`
-* Username: `${DB_USERNAME:root}`
-* Password: `${DB_PASSWORD:1234}`
+* Username: root
+* Password: 1234
+
+### JWT
+
+```yaml
+jwt:
+  secret: your-secret-key
+  expiration: 3600000
+```
 
 ---
 
-##  Run Locally
+## How to Run
 
-### 1. Start MySQL (Docker)
+Start MySQL:
 
 ```bash
 docker compose up -d
 ```
 
-### 2. Run Application
+Run app:
 
 ```bash
 ./gradlew bootRun
 ```
 
-### 3. Run Tests
+---
 
-```bash
-./gradlew test
+## API Endpoints
+
+Base URL: `/v1/api/users`
+
+### Public
+
+* `POST /login` → login user
+
+---
+
+### Protected
+
+* `GET /` → get all users
+* `GET /{id}` → get user
+* `POST /` → create user
+* `PUT /{id}` → update user
+* `PUT /{id}/password` → update password
+
+---
+
+## Auth Usage
+
+For protected APIs:
+
+```
+Authorization: Bearer <token>
 ```
 
 ---
 
-##  API Endpoints
+## Notes
 
-Base URL: `/v1/api/users`
-
-### Get All Users
-
-* `GET /v1/api/users`
-
-### Get User by ID
-
-* `GET /v1/api/users/{id}`
-
-### Create User
-
-* `POST /v1/api/users`
-
-### Update User
-
-* `PUT /v1/api/users`
+* JWT is used, no session management
+* Role is stored in DB and used for authorization
+* Default role is CUSTOMER
+* RBAC is implemented using `@PreAuthorize`
 
 ---
 
-##  Error Handling
+## TODOs
 
-Global exception handling is implemented for:
-
-* Resource not found
-* Generic server errors
+* Refresh tokens
+* API Gateway integration
+* Eureka service discovery
+* Logging & monitoring
 
 ---
 
-##  Notes
 
-* Authentication (login/JWT) is not implemented yet.
-* Service will be extended with authentication and service discovery (Eureka) in future.
