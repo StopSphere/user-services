@@ -9,7 +9,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-public class UserResponse {
+public class UserResponseDTO {
     //json return id,name,email
     private UUID id;
     private String username;
@@ -19,4 +19,5 @@ public class UserResponse {
     private UserRole role;
     private LocalDateTime createdDate;
     private LocalDateTime modifiedDate;
+    private String Password;
 }

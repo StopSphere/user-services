@@ -1,32 +1,35 @@
 package com.shopsphere.userservice.user_services.Controller;
 
 import com.shopsphere.userservice.user_services.Dto.request.CreateUserRequestDTO;
+import com.shopsphere.userservice.user_services.Dto.request.LoginRequestDTO;
+import com.shopsphere.userservice.user_services.Dto.request.UpdatePasswordRequestDTO;
 import com.shopsphere.userservice.user_services.Dto.request.UpdateUserRequestDTO;
-import com.shopsphere.userservice.user_services.Dto.response.UserResponse;
-import com.shopsphere.userservice.user_services.Mapper.UserMapper;
+import com.shopsphere.userservice.user_services.Dto.response.UserResponseDTO;
 import com.shopsphere.userservice.user_services.Service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("v1/api/users")
+@RequestMapping("/v1/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers(){
-        List<UserResponse> users = userService.getAllUsers();
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers(){
+        List<UserResponseDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id){
-         UserResponse response=userService.getUserById(id);
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id){
+         UserResponseDTO response=userService.getUserById(id);
          return ResponseEntity.ok(response);
     }
 
@@ -37,16 +40,31 @@ public class UserController {
     }*/
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequestDTO request){
-        UserResponse response=userService.createUser(request);
+    public ResponseEntity<UserResponseDTO> createUser(@RequestBody  @Valid CreateUserRequestDTO request){
+        UserResponseDTO response=userService.createUser(request);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@RequestBody UpdateUserRequestDTO request , @PathVariable UUID id){
-        UserResponse response=userService.updateUser(id,request);
+    public ResponseEntity<UserResponseDTO> updateUser(@RequestBody UpdateUserRequestDTO request , @PathVariable UUID id){
+        UserResponseDTO response=userService.updateUser(id,request);
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void>updatePassword(@PathVariable UUID id, @RequestBody UpdatePasswordRequestDTO request){
+        userService.updatePassword(id,request);
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequestDTO request){
+        return ResponseEntity.ok(userService.login(request));
+    }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id ){
+        userService.deleteUser(UUID.randomUUID());
+        return ResponseEntity.ok().build();
+    }
 }

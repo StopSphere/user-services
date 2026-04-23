@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class LoginRequestDTO {
     // in login we required only username and password
-    private String username;
+    private String email;
     private String password;
     private String phone;
 

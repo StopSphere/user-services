@@ -26,10 +26,10 @@ public class User {
     @Column(name="user_name",nullable = false,updatable = true)
     private String username;
 
-    @Column(name="psc", nullable = false)
+    @Column(name="password", nullable = false)
     private String password;
 
-    @Column(name="eml", unique = true,nullable = false,updatable = true)
+    @Column(name="email", unique = true,nullable = false,updatable = true)
     private String email;
 
     private String phone;
@@ -38,6 +38,8 @@ public class User {
     @JoinColumn(name="address_id",referencedColumnName = "id")
     private Address address;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
     private UserRole role=UserRole.CUSTOMER;
 
     @CreationTimestamp
