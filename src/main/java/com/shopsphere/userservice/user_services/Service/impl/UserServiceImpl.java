@@ -6,11 +6,14 @@ import com.shopsphere.userservice.user_services.Dto.request.UpdatePasswordReques
 import com.shopsphere.userservice.user_services.Dto.request.UpdateUserRequestDTO;
 import com.shopsphere.userservice.user_services.Dto.response.UserResponseDTO;
 import com.shopsphere.userservice.user_services.Entity.User;
+import com.shopsphere.userservice.user_services.Entity.UserRole;
 import com.shopsphere.userservice.user_services.Exception.UserNotFoundException;
 import com.shopsphere.userservice.user_services.Mapper.UserMapper;
 import com.shopsphere.userservice.user_services.Repository.UserRepository;
 import com.shopsphere.userservice.user_services.Security.Jwt.JwtUtil;
 import com.shopsphere.userservice.user_services.Service.UserService;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +40,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserResponseDTO> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(userMapper::toUserResponse)
+                .map(userMapper::toUserResponseDTO)
                 .toList();
     }
 
@@ -45,14 +48,14 @@ public class UserServiceImpl implements UserService {
     public UserResponseDTO getUserById(UUID id) {
 
         return userRepository.findById(id)
-                .map(userMapper::toUserResponse)
+                .map(userMapper::toUserResponseDTO)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
     }
 
     @Override
     public UserResponseDTO getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .map(userMapper::toUserResponse)
+                .map(userMapper::toUserResponseDTO)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " ));
     }
 
@@ -61,7 +64,7 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.toEntity(dto);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
-        return userMapper.toUserResponse(savedUser);
+        return userMapper.toUserResponseDTO(savedUser);
     }
 
     @Override
@@ -70,7 +73,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
         userMapper.updateUserFromDto(dto, user);
         var updatedUser = userRepository.save(user);
-        return userMapper.toUserResponse(updatedUser);
+        return userMapper.toUserResponseDTO(updatedUser);
     }
 
     @Override
@@ -100,6 +103,25 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(UUID id) {
         userRepository.deleteById(id);
+    }
+
+    @Bean
+    public CommandLineRunner createAdmin(UserRepository repo, PasswordEncoder encoder) {
+        return args -> {
+            String email = "admin@gmail.com";
+
+            if (repo.findByEmail(email).isEmpty()) {
+                User admin = User.builder()
+                        .username("admin")
+                        .email(email)
+                        .password(encoder.encode("admin123"))
+                        .role(UserRole.ADMIN)
+                        .build();
+
+                repo.save(admin);
+                System.out.println("✅ Admin user created");
+            }
+        };
     }
 
 }

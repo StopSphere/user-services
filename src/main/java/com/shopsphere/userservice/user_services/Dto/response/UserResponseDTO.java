@@ -19,5 +19,4 @@ public class UserResponseDTO {
     private UserRole role;
     private LocalDateTime createdDate;
     private LocalDateTime modifiedDate;
-    private String Password;
 }
