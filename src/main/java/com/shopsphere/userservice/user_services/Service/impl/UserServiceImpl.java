@@ -91,13 +91,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String login(LoginRequestDTO dto) {
-        User user=userRepository.findByEmail(dto.getEmail())
+
+        User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + dto.getEmail()));
-        if(!passwordEncoder.matches(dto.getPassword(),user.getPassword())) {
+
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
-
-        return jwtUtil.generateToken(user.getEmail());
+        return jwtUtil.generateToken(
+                user.getEmail(),           // username
+                user.getId()               // UUID
+        );
     }
 
     @Override
