@@ -21,7 +21,7 @@ server:
 
 jwt:
   secret: mysupersecretkeymysupersecretkey123
-  expiration: 600000
+  expiration: 60000000
 
 eureka:
   client:
