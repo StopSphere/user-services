@@ -109,7 +109,7 @@ If you want to run `user-service` directly on your machine (e.g. for debugging),
 
 ## API Documentation (Swagger)
 
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI spec (JSON): `http://localhost:8080/v3/api-docs`
 
 ### How to test secured endpoints in Swagger
