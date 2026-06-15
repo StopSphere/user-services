@@ -1,26 +1,30 @@
-igin# User Service — ShopSphere
+# User Service — ShopSphere
 
-Short, practical README for the User Service. This service manages user data and authentication for the ShopSphere platform.
+User management and authentication service for the ShopSphere platform.
 
 ## What this service does
-- Provides  operations for users
-- Issues JWTs for authentication (login)
-- Secures endpoints with role-based access control (ADMIN / CUSTOMER)
-- Hashes passwords with BCrypt
-- Uses DTOs and MapStruct for clean object mapping
 
-This README reflects the current implementation: JWT-based stateless auth, RBAC via Spring Security annotations, and a MySQL database (usually run in Docker during local development).
+- Full CRUD operations for users
+- Issues JWTs on login for stateless authentication
+- Role-based access control (ADMIN / CUSTOMER) via Spring Security
+- Passwords hashed with BCrypt
+- DTO + MapStruct based clean object mapping
+- OpenAPI/Swagger documentation for all endpoints
 
 ## Tech stack
+
 - Java 21
 - Spring Boot
 - Spring Data JPA
 - Spring Security
 - JWT (custom token handling)
+- Springdoc OpenAPI (Swagger UI)
 - MapStruct
 - Lombok
-- MySQL (commonly run in Docker)
+- MySQL (Dockerized)
+- Eureka (Service Discovery via `discovery-service`)
 - Gradle
+- Docker / Docker Compose
 
 ## Project structure (high level)
 
@@ -38,112 +42,122 @@ src/main/java
 
 ## Configuration
 
-Primary configuration file: `src/main/resources/application.yml`.
-
-Important properties (example placeholders):
+Main config file: `src/main/resources/application.yml`
 
 ```yaml
 spring:
+  application:
+    name: user-service
+
   datasource:
-    url: jdbc:mysql://localhost:3307/user_db
-    username: root
-    password: 1234
+    url: jdbc:mysql://mysql-container:3306/users_db
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:1234}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 jwt:
-  secret: your-secret-key
-  expiration: 3600000 # ms
+  secret: ${JWT_KEY:mysupersecretkeymysupersecretkey123}
+  expiration: 60000000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka
 ```
 
-Replace placeholders with secure values for production (don’t commit secrets).
+> Note: `mysql-container` and `discovery-service` are Docker container/service names from the shared `docker-compose.yml` — the app is expected to run **inside** the `shopsphere-network` Docker network, not directly on your host machine.
+
+> Replace `JWT_KEY`, `DB_USERNAME`, `DB_PASSWORD` via environment variables for production. Never commit real secrets.
 
 ## Running locally
 
-1) Start MySQL (the repository includes a `docker-compose.yml` that spins a MySQL instance):
+This service is part of the ShopSphere microservices stack and depends on `mysql` and `discovery-service` (Eureka) being up — both defined in the shared `docker-compose.yml`.
+
+> The `docker-compose.yml` in this repo is shared across **all** ShopSphere microservices (org-level compose file), currently kept here in the user-service repo.
+
+1) Build the service image (from the user-service project root):
+
+```powershell
+docker build -t user-service .
+```
+
+2) Start the full stack (MySQL, Eureka, and all services):
 
 ```powershell
 docker compose up -d
 ```
 
-2) Run the application
+This starts `mysql-container`, `discovery-service`, `user-service`, and the other microservices on the `shopsphere-network`.
 
-On Windows (recommended since this workspace is Windows-based):
+3) Check logs:
+
+```powershell
+docker logs -f user-service
+```
+
+### Running without Docker (local dev)
+
+If you want to run `user-service` directly on your machine (e.g. for debugging), override the datasource and Eureka URLs in `application.yml` or via environment variables to point to `localhost` instead of `mysql-container` / `discovery-service`, then:
 
 ```powershell
 .\gradlew.bat bootRun
 ```
 
-On Unix/macOS:
-
 ```bash
 ./gradlew bootRun
 ```
 
-Useful notes:
-- If you prefer a jar, build with `./gradlew bootJar` and run the generated jar.
-- If Docker is not available, point `spring.datasource` to a local MySQL instance and create the DB.
+## API Documentation (Swagger)
 
-## API (implemented endpoints)
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI spec (JSON): `http://localhost:8080/v3/api-docs`
+
+### How to test secured endpoints in Swagger
+
+1. Call `POST /v1/api/users/login` with valid email/password.
+2. Copy the JWT token from the response.
+3. Click the **Authorize** button (🔒) at the top of Swagger UI.
+4. Paste the token (no need to type `Bearer ` — Swagger adds it automatically).
+5. Now you can call any protected endpoint, e.g.:
+  - `GET /v1/api/users`
+  - `GET /v1/api/users/{id}`
+  - `PUT /v1/api/users/{id}`
+  - `PUT /v1/api/users/{id}/password`
+
+## API Endpoints
 
 Base path: `/v1/api/users`
 
-Authentication:
-- POST /v1/api/users/login
-  - Body: { "email": "user@example.com", "password": "secret" }
-  - Response: { "token": "<jwt>", "expiresIn": 3600000 }
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/login` | Login, returns JWT | Public |
+| POST | `/` | Create new user | Public |
+| GET | `/` | List all users | Required |
+| GET | `/{id}` | Get user by id | Required |
+| PUT | `/{id}` | Update user | Required |
+| PUT | `/{id}/password` | Change password | Required |
+| DELETE | `/{id}` | Delete user | ADMIN only |
 
-User management (protected):
-- GET /v1/api/users           — list users (requires appropriate role)
-- GET /v1/api/users/{id}     — get a single user by id
-- POST /v1/api/users         — create a new user
-- PUT /v1/api/users/{id}     — update user data
-- PUT /v1/api/users/{id}/password — change password
-
-Authentication header for protected endpoints:
-
-```
-Authorization: Bearer <token>
-```
-
-Example curl (login):
+### Login
 
 ```bash
 curl -X POST http://localhost:8080/v1/api/users/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"admin"}'
+  -d '{"email":"admin@gmail.com","password":"admin123"}'
 ```
 
-Example: call a protected endpoint with the token
+### Calling a protected endpoint
 
 ```bash
 curl http://localhost:8080/v1/api/users -H "Authorization: Bearer <token>"
 ```
 
-## Security and implementation notes
+## Security notes
 
-- Authentication: JWT tokens are generated on successful login and must be sent in the Authorization header.
-- Passwords are stored hashed with BCrypt.
-- Role-based access control is enforced via Spring Security annotations (e.g. `@PreAuthorize`).
-- The service is stateless — no HTTP session is used.
+- JWT tokens are generated on login and must be sent as `Authorization: Bearer <token>`.
+- Passwords are stored hashed with BCrypt — never in plain text.
+- Role-based access enforced with `@PreAuthorize` (e.g. delete user is ADMIN-only).
+- Service is stateless — no HTTP session is used.
+- A default admin user (`admin@gmail.com` / `admin123`) is auto-created on startup if it doesn't exist. **TODO: Change this in production.**
 
-## Tests
 
-Unit tests and simple integration tests are available under `src/test/java`. Run tests with:
-
-```powershell
-.\gradlew.bat test
-```
-
-## Troubleshooting
-
-- Database connection errors: ensure the MySQL container is up and credentials match `application.yml`.
-- Missing JWT secret: set `jwt.secret` before running in non-development environments.
-- Port conflicts: the service defaults to port 8080 — change `server.port` in `application.yml` if needed.
-
-## Where to look in the code
-
-- Controllers: `src/main/java/.../controller`
-- Security config: `src/main/java/.../Config` (contains `SecurityConfig` / filters)
-- DTOs and mappers: `src/main/java/.../dto` and `.../mapper`
-- Repositories & entities: `src/main/java/.../repository` and `.../entity`
-
-If you want, I can also update README examples to include real DTO field names from the code (email, name, roles) — tell me and I’ll pull those directly from the sources.
