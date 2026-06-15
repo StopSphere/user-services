@@ -25,7 +25,7 @@ public class JwtUtil {
 
     @PostConstruct
     public void init() {
-        System.out.println(jwtSecret);
+//        System.out.println(jwtSecret); its just for debugging
         this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 

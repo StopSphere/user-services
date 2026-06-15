@@ -6,6 +6,8 @@ import com.shopsphere.userservice.user_services.Dto.request.UpdatePasswordReques
 import com.shopsphere.userservice.user_services.Dto.request.UpdateUserRequestDTO;
 import com.shopsphere.userservice.user_services.Dto.response.UserResponseDTO;
 import com.shopsphere.userservice.user_services.Service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/api/users")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "Bearer Authentication")
 public class UserController {
 
     private final UserService userService;
@@ -56,6 +59,7 @@ public class UserController {
         userService.updatePassword(id,request);
         return ResponseEntity.ok().build();
     }
+    @Operation(security = {})
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequestDTO request){
         return ResponseEntity.ok(userService.login(request));
@@ -64,7 +68,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id ){
-        userService.deleteUser(UUID.randomUUID());
+        userService.deleteUser(id);
         return ResponseEntity.ok().build();
     }
 }
